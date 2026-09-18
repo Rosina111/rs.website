@@ -449,7 +449,7 @@
                 </div>`;
             };
 
-            html += buildBucket('🌟 表现优异 (整体增加预算)', bucketsData.excellent, 'var(--success)', 'var(--success)', '优异标的占主导。<b>确认对应库存充足后，增加该活动整体预算。</b>');
+            html += buildBucket('🌟 表现优异 (整体增加预算)', bucketsData.excellent, 'var(--success)', 'var(--success)', '优异SKU占主导。<b>确认对应库存充足后，增加该活动整体预算。</b>');
             html += buildBucket('📈 表现分化 - 优秀主导 (升预算 + 优化低效款)', bucketsData.mixedGood, 'var(--primary)', 'var(--primary)', '优秀SKU居多。建议提高预算，同时根据下方诊断标签针对性优化低效款。');
             html += buildBucket('📉 表现分化 - 亏损主导 (降预算 + 排查异常)', bucketsData.mixedBad, 'var(--warning)', '#B45309', '低效SKU较多。建议先收缩该活动预算，集中清理/优化下方异常款。');
             html += buildBucket('🛑 严重亏损 (收缩预算，关注状态)', bucketsData.severe, 'var(--danger)', 'var(--danger)', '全员亏损或 0 单。关注产品状态与库存，<b>强力收缩预算，不建议盲目暂停整个活动</b>。');
