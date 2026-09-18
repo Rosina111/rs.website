@@ -210,7 +210,7 @@
     <div id="view-kw" class="view-section">
         <div class="upload-zone" id="kw-upload" onclick="document.getElementById('kw-file').click()">
             <div style="font-size: 36px; margin-bottom: 8px;">📂</div>
-            <div style="font-size: 18px; font-weight: 700;">点击上传 Keyword / Target 报表</div>
+            <div style="font-size: 18px; font-weight: 700;">点击上传 Keyword报表</div>
             <div style="font-size: 12px; color: var(--muted); margin-top: 8px;">(支持 Excel .xlsx 或 .csv，纯本地极速解析)</div>
             <input type="file" id="kw-file" accept=".csv, .xlsx, .xls" style="display:none;">
         </div>
@@ -450,9 +450,9 @@
             };
 
             html += buildBucket('🌟 表现优异 (整体增加预算)', bucketsData.excellent, 'var(--success)', 'var(--success)', '优异标的占主导。<b>确认对应库存充足后，增加该活动整体预算。</b>');
-            html += buildBucket('📈 表现分化 - 优秀主导 (升预算 + 优化低效款)', bucketsData.mixedGood, 'var(--primary)', 'var(--primary)', '优秀标的居多。建议提高预算，同时根据下方诊断标签针对性优化低效款。');
-            html += buildBucket('📉 表现分化 - 亏损主导 (降预算 + 排查异常)', bucketsData.mixedBad, 'var(--warning)', '#B45309', '低效标的较多。建议先收缩该活动预算，集中清理/优化下方异常款。');
-            html += buildBucket('🛑 严重亏损 (收缩预算，关注状态)', bucketsData.severe, 'var(--danger)', 'var(--danger)', '全员亏损或 0 单跑偏。关注产品状态与库存，<b>强力收缩预算，不建议盲目暂停整个活动</b>。');
+            html += buildBucket('📈 表现分化 - 优秀主导 (升预算 + 优化低效款)', bucketsData.mixedGood, 'var(--primary)', 'var(--primary)', '优秀SKU居多。建议提高预算，同时根据下方诊断标签针对性优化低效款。');
+            html += buildBucket('📉 表现分化 - 亏损主导 (降预算 + 排查异常)', bucketsData.mixedBad, 'var(--warning)', '#B45309', '低效SKU较多。建议先收缩该活动预算，集中清理/优化下方异常款。');
+            html += buildBucket('🛑 严重亏损 (收缩预算，关注状态)', bucketsData.severe, 'var(--danger)', 'var(--danger)', '全员亏损或 0 单。关注产品状态与库存，<b>强力收缩预算，不建议盲目暂停整个活动</b>。');
 
             document.getElementById(containerId).innerHTML = html || '<div style="padding:20px; text-align:center; color:var(--success); font-weight:700; background:#F0FDF4; border:1px solid #A7F3D0; border-radius:8px;">✅ 当前大盘指标健康，未发现需要干预的异常广告活动。</div>';
         }
@@ -1067,7 +1067,7 @@
             html += buildKwBucket('🌟 建议加投的广告活动', buckets.promoteCamp, 'var(--success)', '大盘表现优异。确认对应产品库存充足后，增加该活动的整体预算。', true, false);
             html += buildKwBucket('💡 核心优异高潜词库', buckets.focusKw, 'var(--primary)', '投入产出极佳。建议将其补充至对应产品标题或详情页中强化自然搜索权重。', false, false);
             html += buildKwBucket('🛑 严重跑偏且无转化词', buckets.negKw, 'var(--danger)', '与活动核心词完全不相关，且点击极多却 0 转化。建议：先确认是否是无效词，再考虑精否。', false, true);
-            html += buildKwBucket('🛠️ 意图相关但亏损的词', buckets.optKw, 'var(--warning)', '意图相关（或有出单）但利润已被击穿。请先参考诊断标签去优化漏斗表现，无法优化再考虑否词。', false, false);
+            html += buildKwBucket('🛠️ 意图相关但亏损的词', buckets.optKw, 'var(--warning)', '意图相关（或有出单）但利润较低。请先参考诊断标签去优化漏斗表现，优化后表现较差再考虑否词。', false, false);
 
             document.getElementById('kw-action-buckets').innerHTML = html || '<div style="padding:20px; text-align:center; color:var(--success); font-weight:700; background:#F0FDF4; border:1px solid #BBF7D0; border-radius:8px;">✅ 当前大盘指标健康，未发现需要干预的异常 Keyword。</div>';
             document.getElementById('kw-action-results').style.display = 'block';
