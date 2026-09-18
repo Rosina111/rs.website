@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jumia Ads Optimizer - 智能操盘引擎</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <style>
+        :root { --bg: #F9FAFB; --panel: #FFFFFF; --text: #111827; --muted: #6B7280; --primary: #3B82F6; --success: #10B981; --danger: #EF4444; --warning: #F59E0B; --purple: #8B5CF6; --border: #E5E7EB; }
+        * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { margin: 0; padding: 24px; background: var(--bg); color: var(--text); font-size: 13px; }
+        
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; background: #fff; padding: 16px 24px; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .title { font-size: 20px; font-weight: 800; margin: 0; display: flex; align-items: center; gap: 8px; }
+        .tab-group { display: flex; background: #F3F4F6; padding: 4px; border-radius: 8px; }
+        .tab-btn { padding: 8px 24px; border: none; background: transparent; border-radius: 6px; font-size: 14px; font-weight: 600; color: var(--muted); cursor: pointer; transition: 0.2s; outline: none; }
+        .tab-btn.active { background: #fff; color: var(--primary); box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        
+        .card { background: var(--panel); border-radius: 12px; padding: 20px; border: 1px solid var(--border); margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .card-header { font-size: 16px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; }
+        
+        .btn { padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; border: 1px solid transparent; transition: 0.2s; background: var(--panel); border-color: var(--border); color: var(--text); outline: none; }
+        .btn:hover { background: #F3F4F6; }
+        .btn-primary { background: var(--primary); color: #fff; border:none; }
+        .btn-primary:hover { background: #2563EB; }
+        .btn-danger { background: var(--danger); color: #fff; border:none; }
+        .btn-danger:hover { background: #DC2626; }
+        
+        .form-control { padding: 8px; border: 1px solid var(--border); border-radius: 6px; outline: none; font-size: 13px; }
+        .upload-zone { border: 2px dashed #D1D5DB; border-radius: 12px; padding: 40px; text-align: center; cursor: pointer; background: #fff; margin-bottom: 20px; transition: 0.2s; }
+        .upload-zone:hover { border-color: var(--primary); background: #EFF6FF; }
+        
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        .input-group { display: flex; flex-direction: column; gap: 6px; }
+        .input-label { font-size: 12px; font-weight: 600; color: var(--muted); }
+        
+        .top10-bar { display: flex; flex-direction: column; margin-bottom: 10px; padding: 6px; border-radius: 6px; transition: all 0.2s; border: 1px solid transparent; }
+        .top10-bar:hover { transform: translateY(-2px); border-color: #D1D5DB; background: #F9FAFB; }
+        .top10-bar.highlight { border-color: var(--primary); background: #EFF6FF; transform: scale(1.02); }
+        .track { height: 6px; background: #F3F4F6; border-radius: 3px; overflow: hidden; margin-top: 4px; }
+        .fill { height: 100%; border-radius: 3px; }
+        
+        .multi-select { position: relative; width: 180px; }
+        .ms-header { padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; background: #fff; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .ms-options { position: absolute; top: 100%; left: 0; width: 100%; max-height: 250px; overflow-y: auto; background: #fff; border: 1px solid var(--border); border-radius: 6px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 100; display: none; padding: 4px 0; margin-top: 4px; }
+        .ms-options label { padding: 6px 12px; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+        .ms-options label:hover { background: #F3F4F6; }
+
+        .insight-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px; }
+        .insight-item { padding: 14px; border-radius: 8px; font-size: 13px; line-height: 1.6; border: 1px solid transparent; }
+
+        .action-bucket { border: 2px solid var(--border); border-radius: 8px; margin-bottom: 24px; overflow: hidden; background: #fff; }
+        .action-header { padding: 12px 16px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px; font-size: 15px; }
+        .action-desc { font-size: 13px; font-weight: normal; opacity: 0.9; margin-left: auto; }
+        .action-body { padding: 16px; background: #F9FAFB; }
+        
+        .camp-block { background: #fff; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 16px; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,0.02); }
+        .camp-block:last-child { margin-bottom: 0; }
+        .camp-header { padding: 10px 16px; font-weight: 700; background: #F3F4F6; border-bottom: 1px solid var(--border); color: var(--text); display: flex; justify-content: space-between; align-items: center; }
+        
+        .mini-table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; }
+        .mini-table th { background: #fff; padding: 8px 12px; color: var(--muted); border-bottom: 1px solid var(--border); position: sticky; top:0;}
+        .mini-table td { padding: 8px 12px; border-bottom: 1px dashed var(--border); }
+        .mini-table tr:last-child td { border-bottom: none; }
+        .err-tag { background: #FEF2F2; color: #991B1B; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 600; border: 1px solid #FCA5A5; display: inline-block; }
+        .good-tag { background: #F0FDF4; color: #065F46; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 600; border: 1px solid #A7F3D0; display: inline-block; }
+
+        .table-wrap { overflow-x: auto; max-height: 500px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; }
+        table { width: 100%; border-collapse: collapse; min-width: 900px; }
+        th { position: sticky; top: 0; background: #F9FAFB; color: var(--muted); font-size: 12px; padding: 12px; text-align: left; border-bottom: 1px solid var(--border); z-index: 10; }
+        td { padding: 8px 12px; border-bottom: 1px solid #F3F4F6; color: var(--text); }
+        tr:hover td { background: #F9FAFB; }
+        .tree-toggle { cursor: pointer; color: var(--muted); margin-right: 6px; display: inline-block; width: 14px; text-align: center; font-family: monospace; font-weight: bold; }
+        .dim-checkboxes { display: flex; gap: 12px; align-items: center; margin-bottom: 12px; background: #F9FAFB; padding: 12px; border-radius: 8px; border: 1px solid var(--border); }
+        .dim-cb-label { display: flex; align-items: center; gap: 4px; cursor: pointer; font-weight: 500; }
+        
+        .view-section { display: none; }
+        .view-section.active { display: block; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1 class="title">✨ Ads Optimizer</h1>
+        <div class="tab-group">
+            <button class="tab-btn active" id="tab-sku" onclick="app_switchTab('sku')">📦 SKU 诊断模式</button>
+            <button class="tab-btn" id="tab-kw" onclick="app_switchTab('kw')">🔑 Keyword 诊断模式</button>
+        </div>
+        <div style="display: flex; gap: 12px;">
+            <button class="btn" id="global-export-btn" style="display: none; border-color:var(--success); color:var(--success);" onclick="app_exportData()">📥 导出当前透视表</button>
+            <button class="btn" onclick="location.reload()">🔄 清空重置</button>
+        </div>
+    </div>
+
+    <!-- ================== 📦 SKU 模块 ================== -->
+    <div id="view-sku" class="view-section active">
+        <div class="upload-zone" id="sku-upload" onclick="document.getElementById('sku-file').click()">
+            <div style="font-size: 36px; margin-bottom: 8px;">📂</div>
+            <div style="font-size: 18px; font-weight: 700;">点击上传 SKU 广告报表</div>
+            <div style="font-size: 12px; color: var(--muted); margin-top: 8px;">(支持 Excel .xlsx 或 .csv，纯本地极速解析)</div>
+            <input type="file" id="sku-file" accept=".csv, .xlsx, .xls" style="display:none;">
+        </div>
+
+        <div id="sku-workspace" style="display:none;">
+            <!-- 过滤栏 -->
+            <div class="card">
+                <div class="card-header">🔍 全局过滤底池</div>
+                <div style="display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap;">
+                    <div class="input-group">
+                        <span class="input-label">分析时段 (强制≥2周)</span>
+                        <div style="display:flex; gap:8px;">
+                            <select id="sku-wk-from" class="form-control" onchange="sku_update()"></select>
+                            <select id="sku-wk-to" class="form-control" onchange="sku_update()"></select>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <span class="input-label">Campaign</span>
+                        <div class="multi-select">
+                            <div class="ms-header" onclick="app_toggleMs('sku-ms-camp-opts')"><span id="sku-ms-camp-lbl">全部</span><span>▼</span></div>
+                            <div class="ms-options" id="sku-ms-camp-opts"></div>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <span class="input-label">Ad Group</span>
+                        <div class="multi-select">
+                            <div class="ms-header" onclick="app_toggleMs('sku-ms-adg-opts')"><span id="sku-ms-adg-lbl">全部</span><span>▼</span></div>
+                            <div class="ms-options" id="sku-ms-adg-opts"></div>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <span class="input-label">搜索 SKU</span>
+                        <input type="text" id="sku-search" class="form-control" style="width:160px;" placeholder="输入SKU..." onkeyup="if(event.keyCode===13) sku_update()">
+                    </div>
+                    <button class="btn btn-primary" onclick="sku_update()">应用过滤</button>
+                </div>
+            </div>
+
+            <!-- Top 10 -->
+            <div class="card">
+                <div class="card-header">🏆 Top 10 大盘核心榜单</div>
+                <div class="grid-3">
+                    <div><div style="font-weight:700; color:var(--primary); margin-bottom:12px;">🔥 花费大户 (Spend)</div><div id="sku-top-spend"></div></div>
+                    <div><div style="font-weight:700; color:var(--success); margin-bottom:12px;">💰 产出标兵 (Sales)</div><div id="sku-top-sales"></div></div>
+                    <div><div style="font-weight:700; color:var(--purple); margin-bottom:12px;">🌟 效率王者 (ROAS)</div><div id="sku-top-roas"></div></div>
+                </div>
+                <!-- SKU 交叉诊断小结 -->
+                <div style="border-top: 1px dashed var(--border); padding-top: 20px; margin-top: 20px;">
+                    <div style="font-size: 15px; font-weight: 700; margin-bottom: 16px;">💡 榜单交叉诊断小结</div>
+                    <ul class="insight-list">
+                        <li class="insight-item" style="background-color: #FEF2F2; border-color: #FECACA;">
+                            <div style="font-weight: 700; color: var(--danger); margin-bottom: 4px;">🔴 花费大户未上产出榜（建议：重点排查降价或暂停）</div>
+                            <div style="margin-top: 4px;"><b>需处理 (<span id="sku-insight-bad-count">0</span>个)：</b> <span id="sku-insight-bad-list">无</span></div>
+                        </li>
+                        <li class="insight-item" style="background-color: #F0FDF4; border-color: #BBF7D0;">
+                            <div style="font-weight: 700; color: var(--success); margin-bottom: 4px;">🟢 核心主力款（建议：保证预算与对应库存充足）</div>
+                            <div style="margin-top: 4px;"><b>爆款 SKU (<span id="sku-insight-core-count">0</span>个)：</b> <span id="sku-insight-core-list">无</span></div>
+                        </li>
+                        <li class="insight-item" style="background-color: #FFFBEB; border-color: #FDE68A;">
+                            <div style="font-weight: 700; color: #B45309; margin-bottom: 4px;">🟡 高潜待爆区（建议：适当倾斜预算，放大曝光）</div>
+                            <div style="margin-top: 4px;"><b>潜力 SKU (<span id="sku-insight-pot-count">0</span>个)：</b> <span id="sku-insight-pot-list">无</span></div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- SKU 诊断引擎 -->
+            <div class="card" style="border-color:#FCA5A5;">
+                <div class="card-header" style="color:var(--danger);">🚨 宏观操盘引擎 (自动判断大盘预算走向)</div>
+                <div style="font-size: 12px; color: var(--muted); margin-bottom: 16px;">
+                    系统将以 <b>Campaign (广告活动) 为主体</b>，综合研判其内部优质与劣质 SKU 的占比，直接给出该活动的预算调整建议。
+                </div>
+                <div style="display:flex; gap:16px; margin-bottom:16px; align-items: flex-end;">
+                    <div class="input-group"><span class="input-label">底线 Clicks (>=)</span><input type="number" id="sku-clk" class="form-control" placeholder="必须满足此点击才判断"></div>
+                    <div class="input-group"><span class="input-label">及格 ROAS (>=)</span><input type="number" id="sku-roa" class="form-control" placeholder="建议: 均值的 70%"></div>
+                    <div class="input-group"><span class="input-label">及格 ACOS (<= %)</span><input type="number" id="sku-aco" class="form-control" placeholder="系统联动换算"></div>
+                    <button class="btn btn-outline" onclick="sku_fillConfig()">💡 一键填入大盘动态推荐值 (ROAS 均值70% / ACOS 联动换算)</button>
+                </div>
+                <button class="btn-danger" style="width:100%; padding:12px; border-radius:8px; font-size:14px; font-weight:700; cursor:pointer;" onclick="sku_runActionEngine()">⚡ 执行诊断，生成宏观优化指令</button>
+            </div>
+
+            <div id="sku-action-results" style="display:none; margin-bottom:24px;">
+                <div id="sku-cannibal-alert" style="margin-bottom:16px;"></div>
+                <h2 style="font-size: 18px; margin-bottom: 16px; display:flex; align-items:center; gap:8px;">🎯 终极操盘指令 <span style="font-size:12px; color:var(--muted); font-weight:normal;">(以 Campaign 为单位的预算建议)</span></h2>
+                <div id="sku-action-buckets"></div>
+            </div>
+
+            <!-- 数据透视 -->
+            <div class="card">
+                <div class="card-header">🌳 自由组合数据透视表</div>
+                <div class="dim-checkboxes">
+                    <span style="font-weight:600; font-size:13px; color:var(--primary);">💡 勾选先后顺序即为层级嵌套顺序：</span>
+                    <label class="dim-cb-label"><input type="checkbox" class="sku-dim-cb" value="camp" onchange="sku_dimChange(this)"> Campaign</label>
+                    <label class="dim-cb-label"><input type="checkbox" class="sku-dim-cb" value="adg" onchange="sku_dimChange(this)"> Ad Group</label>
+                    <label class="dim-cb-label"><input type="checkbox" class="sku-dim-cb" value="sku" onchange="sku_dimChange(this)"> SKU</label>
+                    <label class="dim-cb-label"><input type="checkbox" class="sku-dim-cb" value="wk" onchange="sku_dimChange(this)"> Week</label>
+                    <span id="sku-dim-order" style="margin-left:auto; color:#111827; font-size:12px; font-weight:700;"></span>
+                </div>
+                <div class="table-wrap">
+                    <table id="sku-tree">
+                        <thead><tr><th>实体名称</th><th>Spend</th><th>Sales</th><th>Orders</th><th>Clicks</th><th>ROAS</th><th>ACOS</th><th>CTR</th><th>CVR</th></tr></thead>
+                        <tbody id="sku-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================== 🔑 Keyword 模块 ================== -->
+    <div id="view-kw" class="view-section">
+        <div class="upload-zone" id="kw-upload" onclick="document.getElementById('kw-file').click()">
+            <div style="font-size: 36px; margin-bottom: 8px;">📂</div>
+            <div style="font-size: 18px; font-weight: 700;">点击上传 Keyword / Target 报表</div>
+            <div style="font-size: 12px; color: var(--muted); margin-top: 8px;">(支持 Excel .xlsx 或 .csv，纯本地极速解析)</div>
+            <input type="file" id="kw-file" accept=".csv, .xlsx, .xls" style="display:none;">
+        </div>
+
+        <div id="kw-workspace" style="display:none;">
+            <!-- 过滤栏 -->
+            <div class="card">
+                <div class="card-header">🔍 全局过滤底池</div>
+                <div style="display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap;">
+                    <div class="input-group">
+                        <span class="input-label">分析时段 (强制≥2周)</span>
+                        <div style="display:flex; gap:8px;">
+                            <select id="kw-wk-from" class="form-control" onchange="kw_update()"></select>
+                            <select id="kw-wk-to" class="form-control" onchange="kw_update()"></select>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <span class="input-label">Campaign</span>
+                        <div class="multi-select">
+                            <div class="ms-header" onclick="app_toggleMs('kw-ms-camp-opts')"><span id="kw-ms-camp-lbl">全部</span><span>▼</span></div>
+                            <div class="ms-options" id="kw-ms-camp-opts"></div>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <span class="input-label">Ad Group</span>
+                        <div class="multi-select">
+                            <div class="ms-header" onclick="app_toggleMs('kw-ms-adg-opts')"><span id="kw-ms-adg-lbl">全部</span><span>▼</span></div>
+                            <div class="ms-options" id="kw-ms-adg-opts"></div>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <span class="input-label">搜索 Keyword</span>
+                        <input type="text" id="kw-search" class="form-control" style="width:160px;" placeholder="输入 Keyword..." onkeyup="if(event.keyCode===13) kw_update()">
+                    </div>
+                    <button class="btn btn-primary" onclick="kw_update()">应用过滤</button>
+                </div>
+            </div>
+
+            <!-- Top 10 -->
+            <div class="card">
+                <div class="card-header">🏆 Top 10 核心榜单</div>
+                <div class="grid-3">
+                    <div><div style="font-weight:700; color:var(--primary); margin-bottom:12px;">🔥 花费大户 (Spend)</div><div id="kw-top-spend"></div></div>
+                    <div><div style="font-weight:700; color:var(--warning); margin-bottom:12px;">🎯 转化主力 (Conversions)</div><div id="kw-top-conv"></div></div>
+                    <div><div style="font-weight:700; color:var(--purple); margin-bottom:12px;">🌟 效率王者 (ROAS)</div><div id="kw-top-roas"></div></div>
+                </div>
+            </div>
+
+            <!-- KW 诊断引擎 -->
+            <div class="card" style="border-color:#FCA5A5;">
+                <div class="card-header" style="color:var(--danger);">🚨 词根比对与宏观诊断引擎</div>
+                <div style="font-size: 12px; color: var(--muted); margin-bottom: 16px;">
+                    系统将提取表现优异的活动和高潜词，并<b>严格对比所属活动的核心词根</b>，分离出“跑偏词”和“意图相关的流失词”，精准输出行动清单。
+                </div>
+                <div style="display:flex; gap:16px; margin-bottom:16px; align-items: flex-end;">
+                    <div class="input-group"><span class="input-label">底线 Clicks (>=)</span><input type="number" id="kw-clk" class="form-control" placeholder="建议: 30"></div>
+                    <div class="input-group"><span class="input-label">及格 ROAS (>=)</span><input type="number" id="kw-roa" class="form-control" placeholder="建议: 均值的 70%"></div>
+                    <div class="input-group"><span class="input-label">及格 ACOS (<= %)</span><input type="number" id="kw-aco" class="form-control" placeholder="系统联动换算"></div>
+                    <button class="btn btn-outline" onclick="kw_fillConfig()">💡 一键填入大盘动态推荐值</button>
+                </div>
+                <button class="btn-danger" style="width:100%; padding:12px; border-radius:8px; font-size:14px; font-weight:700; cursor:pointer;" onclick="kw_runActionEngine()">⚡ 执行诊断，生成精否行动清单</button>
+            </div>
+
+            <div id="kw-action-results" style="display:none; margin-bottom:24px;">
+                <h2 style="font-size: 18px; margin-bottom: 16px; display:flex; align-items:center; gap:8px;">🎯 终极操盘指令 <span style="font-size:12px; color:var(--muted); font-weight:normal;">(大盘预算分配及异常词排查)</span></h2>
+                <div id="kw-action-buckets"></div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">🌳 自由组合数据透视表</div>
+                <div class="dim-checkboxes">
+                    <span style="font-weight:600; font-size:13px; color:var(--primary);">💡 勾选先后顺序即为层级嵌套顺序：</span>
+                    <label class="dim-cb-label"><input type="checkbox" class="kw-dim-cb" value="camp" onchange="kw_dimChange(this)"> Campaign</label>
+                    <label class="dim-cb-label"><input type="checkbox" class="kw-dim-cb" value="adg" onchange="kw_dimChange(this)"> Ad Group</label>
+                    <label class="dim-cb-label"><input type="checkbox" class="kw-dim-cb" value="kw" onchange="kw_dimChange(this)"> Keyword</label>
+                    <label class="dim-cb-label"><input type="checkbox" class="kw-dim-cb" value="wk" onchange="kw_dimChange(this)"> Week</label>
+                    <span id="kw-dim-order" style="margin-left:auto; color:#111827; font-size:12px; font-weight:700;"></span>
+                </div>
+                <div class="table-wrap">
+                    <table id="kw-tree">
+                        <thead><tr><th>实体名称</th><th>Spend</th><th>Sales</th><th>Orders</th><th>Clicks</th><th>ROAS</th><th>ACOS</th><th>CTR</th><th>CVR</th></tr></thead>
+                        <tbody id="kw-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================== 核心底层脚本 (全局架构防隔离) ================== -->
+    <script>
+        const utils = {
+            fmtM: v => (v||0).toLocaleString('en-US',{minimumFractionDigits:2, maximumFractionDigits:2}),
+            fmtR: v => (v||0).toFixed(2),
+            fmtI: v => Math.round(v||0).toLocaleString(),
+            fmtP: v => ((v||0)*100).toFixed(1)+'%',
+            esc: s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),
+            getWk: dStr => {
+                if(!dStr) return 'W00'; let d = new Date(dStr.split(' ')[0]); if(isNaN(d)) return 'W00';
+                d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay()||7)); let ySt = new Date(Date.UTC(d.getUTCFullYear(),0,1));
+                let wNo = Math.ceil((((d-ySt)/86400000)+1)/7); return '20'+String(d.getUTCFullYear()).slice(-2)+'W'+(wNo<10?'0'+wNo:wNo);
+            },
+            highlight: (cls) => {
+                document.querySelectorAll('.top10-bar').forEach(b => {
+                    if(b.classList.contains(cls)) { b.style.opacity='1'; b.style.borderColor='var(--primary)'; b.style.transform='scale(1.02)'; }
+                    else { b.style.opacity='0.3'; b.style.borderColor='transparent'; b.style.transform='none'; }
+                });
+            },
+            unhighlight: () => {
+                document.querySelectorAll('.top10-bar').forEach(b => { b.style.opacity='1'; b.style.borderColor='transparent'; b.style.transform='none'; });
+            },
+            buildTree: (rows, dims, lvl) => {
+                if(lvl >= dims.length || rows.length===0) return [];
+                let dim = dims[lvl]; let grps = {};
+                rows.forEach(r => { let k = String(r[dim]||'(Empty)'); if(!grps[k]) grps[k]=[]; grps[k].push(r); });
+                let res = [];
+                for(let k in grps) {
+                    let g = grps[k];
+                    let node = { name:k, dim:dim, lvl:lvl, spend:0, sales:0, orders:0, clicks:0, impr:0, conv:0, children: utils.buildTree(g, dims, lvl+1) };
+                    g.forEach(r => { node.spend+=r.spend; node.sales+=r.sales; node.orders+=r.orders; node.clicks+=r.clicks; node.impr+=r.impr; node.conv+=r.conv; });
+                    node.roas = node.spend>0 ? node.sales/node.spend : 0;
+                    node.acos = node.sales>0 ? node.spend/node.sales : (node.spend>0?Infinity:0);
+                    node.ctr = node.impr>0 ? node.clicks/node.impr : 0;
+                    node.cvr = node.clicks>0 ? node.conv/node.clicks : 0;
+                    res.push(node);
+                }
+                res.sort((a,b) => b.spend - a.spend); return res;
+            },
+            isSim: (kw1, kw2) => {
+                if(!kw1 || !kw2) return false; let w1 = kw1.toLowerCase(); let w2 = kw2.toLowerCase();
+                if(w1.includes(w2) || w2.includes(w1)) return true;
+                return w1.split(/\s+/).filter(p => w2.split(/\s+/).includes(p) && p.length>2).length > 0;
+            }
+        };
+
+        // --- 全局交互 ---
+        let currentTab = 'sku';
+        function app_switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('tab-' + tabId).classList.add('active');
+            document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
+            document.getElementById('view-' + tabId).classList.add('active');
+            currentTab = tabId;
+            let btn = document.getElementById('global-export-btn');
+            if(tabId==='sku' && document.getElementById('sku-workspace').style.display==='block') btn.style.display='inline-flex';
+            else if(tabId==='kw' && document.getElementById('kw-workspace').style.display==='block') btn.style.display='inline-flex';
+            else btn.style.display='none';
+        }
+
+        function app_exportData() {
+            if (currentTab === 'sku') sku_exportData();
+            else if (currentTab === 'kw') kw_exportData();
+        }
+
+        function app_toggleMs(id) {
+            let el = document.getElementById(id); let isD = el.style.display==='block';
+            document.querySelectorAll('.ms-options').forEach(n => n.style.display='none');
+            if(!isD) el.style.display='block';
+        }
+
+        document.addEventListener('click', e => { 
+            if(!e.target.closest('.multi-select')) { document.querySelectorAll('.ms-options').forEach(n => n.style.display='none'); }
+        });
+
+        window.toggleTreeNode = function(id, btn) {
+            let exp = btn.innerText === '▶'; btn.innerText = exp ? '▼' : '▶';
+            document.querySelectorAll(`tr[data-parent="${id}"]`).forEach(tr => {
+                tr.style.display = exp ? 'table-row' : 'none';
+                if(!exp) { let cBtn = tr.querySelector('.tree-toggle'); if(cBtn && cBtn.innerText==='▼') cBtn.click(); }
+            });
+        };
+
+        function app_parseFile(file, uploadZoneId, callback) {
+            const zone = document.getElementById(uploadZoneId);
+            zone.innerHTML = '<div style="font-size:36px; margin-bottom:12px;">⏳</div><div style="font-size:18px; font-weight:700;">正在极速解析数据，请稍候...</div>';
+            const cleanKeys = (dataArray) => dataArray.map(row => { 
+                let newRow = {}; Object.keys(row).forEach(k => newRow[k.replace(/^\uFEFF/, '').trim()] = row[k]); return newRow; 
+            });
+            if (file.name.toLowerCase().endsWith('.csv') && typeof Papa !== 'undefined') {
+                Papa.parse(file, { header: true, skipEmptyLines: true, complete: (res) => callback(cleanKeys(res.data)) });
+            } else {
+                let reader = new FileReader();
+                reader.onload = (evt) => {
+                    try {
+                        let workbook = XLSX.read(new Uint8Array(evt.target.result), {type: 'array'});
+                        let json = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {defval: '', raw: false});
+                        callback(cleanKeys(json));
+                    } catch(err) { alert('❌ 解析失败，请确保上传了正确的 Excel/CSV 报表。'); location.reload(); }
+                };
+                reader.readAsArrayBuffer(file);
+            }
+        }
+
+        // --- 宏观渲染组件 (Sku 共用) ---
+        function renderActionBuckets(bucketsData, containerId, kwMode = false) {
+            let html = '';
+            let drawCampBlock = (campObj, titleCol) => {
+                let items = campObj.items.sort((a,b)=>b.spend-a.spend);
+                let trs = items.map(x => {
+                    let name = kwMode ? x.kw : x.sku;
+                    let tagClass = x.err === '优秀' ? 'good-tag' : 'err-tag';
+                    return `<tr>
+                        <td>${utils.esc(x.adg)}</td><td><b>${utils.esc(name)}</b></td>
+                        <td>${utils.fmtM(x.spend)}</td><td>${utils.fmtM(x.sales)}</td><td>${utils.fmtI(x.clicks)}</td>
+                        <td style="color:${titleCol};font-weight:600;">${utils.fmtR(x.roas)}</td>
+                        <td>${x.acos===Infinity?'>100%':utils.fmtP(x.acos)}</td>
+                        <td>${utils.fmtP(x.ctr)}</td><td>${utils.fmtP(x.cvr)}</td>
+                        <td><span class="${tagClass}">${x.err}</span></td>
+                    </tr>`;
+                }).join('');
+                
+                return `
+                <div class="camp-block">
+                    <div class="camp-header">
+                        <span>🎯 Campaign: ${utils.esc(campObj.camp)}</span>
+                        <span style="font-size:12px; font-weight:normal; color:var(--muted);">共 ${items.length} 个重点标的</span>
+                    </div>
+                    <div class="table-wrap" style="max-height:250px;">
+                        <table class="mini-table">
+                            <thead><tr><th>Ad Group</th><th>${kwMode?'Keyword':'SKU'}</th><th>Spend</th><th>Sales</th><th>Clicks</th><th>ROAS</th><th>ACOS</th><th>CTR</th><th>CVR</th><th>诊断标签</th></tr></thead>
+                            <tbody>${trs}</tbody>
+                        </table>
+                    </div>
+                </div>`;
+            };
+
+            let buildBucket = (title, campArr, bg, col, desc) => {
+                if(!campArr.length) return '';
+                let blocksHtml = campArr.map(c => drawCampBlock(c, col)).join('');
+                return `
+                <div class="action-bucket" style="border-color:${bg};">
+                    <div class="action-header" style="background:${bg};">
+                        <span>${title} (${campArr.length} 个广告活动)</span>
+                        <span class="action-desc">${desc}</span>
+                    </div>
+                    <div class="action-body">${blocksHtml}</div>
+                </div>`;
+            };
+
+            html += buildBucket('🌟 表现优异 (整体增加预算)', bucketsData.excellent, 'var(--success)', 'var(--success)', '优异标的占主导。<b>确认对应库存充足后，增加该活动整体预算。</b>');
+            html += buildBucket('📈 表现分化 - 优秀主导 (升预算 + 优化低效款)', bucketsData.mixedGood, 'var(--primary)', 'var(--primary)', '优秀标的居多。建议提高预算，同时根据下方诊断标签针对性优化低效款。');
+            html += buildBucket('📉 表现分化 - 亏损主导 (降预算 + 排查异常)', bucketsData.mixedBad, 'var(--warning)', '#B45309', '低效标的较多。建议先收缩该活动预算，集中清理/优化下方异常款。');
+            html += buildBucket('🛑 严重亏损 (收缩预算，关注状态)', bucketsData.severe, 'var(--danger)', 'var(--danger)', '全员亏损或 0 单跑偏。关注产品状态与库存，<b>强力收缩预算，不建议盲目暂停整个活动</b>。');
+
+            document.getElementById(containerId).innerHTML = html || '<div style="padding:20px; text-align:center; color:var(--success); font-weight:700; background:#F0FDF4; border:1px solid #A7F3D0; border-radius:8px;">✅ 当前大盘指标健康，未发现需要干预的异常广告活动。</div>';
+        }
+
+        // ==========================================
+        // 模块 1：📦 SKU Optimizer 全局函数
+        // ==========================================
+        let sku_raw=[], sku_activeDims=[];
+        let sku_selectedCamps = new Set(), sku_selectedAdgs = new Set();
+        let sku_topSpSet = new Set(), sku_topSaSet = new Set();
+        let sku_curTree = [];
+
+        document.getElementById('sku-file').addEventListener('change', e => {
+            if(!e.target.files[0]) return;
+            app_parseFile(e.target.files[0], 'sku-upload', sku_processData);
+            e.target.value = '';
+        });
+
+        document.getElementById('sku-roa').addEventListener('input', function(e) {
+            let roa = parseFloat(e.target.value);
+            if(roa > 0) document.getElementById('sku-aco').value = ((1/roa)*100).toFixed(1);
+            else document.getElementById('sku-aco').value = '';
+        });
+        document.getElementById('sku-aco').addEventListener('input', function(e) {
+            let aco = parseFloat(e.target.value);
+            if(aco > 0) document.getElementById('sku-roa').value = (1/(aco/100)).toFixed(2);
+            else document.getElementById('sku-roa').value = '';
+        });
+
+        function sku_processData(data) {
+            let map = new Map();
+            data.forEach(r => {
+                let dStr = r['Day']||r['Date']; if(!dStr) return;
+                let wk = utils.getWk(dStr); let camp = (r['Campaign']||'(空白)').trim(); let adg = (r['Ad group']||'(空白)').trim(); let sku = (r['Product SKU']||r['SKU']||'').trim();
+                if(!sku || sku.toLowerCase()==='total') return;
+                let key = `${wk}|${camp}|${adg}|${sku}`;
+                if(!map.has(key)) map.set(key, {wk, camp, adg, sku, impr:0, clicks:0, spend:0, sales:0, orders:0, conv:0});
+                let g = map.get(key);
+                g.impr += parseFloat(r['Impressions']||r['Impresisons']||0)||0; g.clicks += parseFloat(r['Clicks']||0)||0;
+                g.spend += parseFloat(r['Spend']||0)||0; g.sales += parseFloat(r['Sales']||0)||0;
+                g.orders += parseFloat(r['Orders']||r['Direct Orders']||0)||0; g.conv += parseFloat(r['Conversions']||r['Ad Conversions']||0)||0;
+            });
+            sku_raw = Array.from(map.values());
+            if(sku_raw.length===0) { alert('数据为空，请检查列名'); location.reload(); return; }
+            
+            document.getElementById('sku-upload').style.display='none'; document.getElementById('sku-workspace').style.display='block';
+            document.getElementById('global-export-btn').style.display='inline-flex';
+            
+            let wks = [...new Set(sku_raw.map(r=>r.wk))].sort();
+            let opts = wks.map(w => `<option value="${w}">${w}</option>`).join('');
+            document.getElementById('sku-wk-from').innerHTML=opts; document.getElementById('sku-wk-to').innerHTML=opts;
+            document.getElementById('sku-wk-from').value=wks[0]; document.getElementById('sku-wk-to').value=wks[wks.length-1];
+            
+            sku_activeDims = [];
+            document.querySelectorAll('.sku-dim-cb').forEach(cb => { if(cb.value!=='wk') { cb.checked=true; sku_activeDims.push(cb.value); }});
+            
+            sku_update();
+        }
+
+        window.sku_update = function(preserve=false) {
+            let f = document.getElementById('sku-wk-from').value; let t = document.getElementById('sku-wk-to').value;
+            if(f>t) { let tmp=f; f=t; t=tmp; document.getElementById('sku-wk-from').value=f; document.getElementById('sku-wk-to').value=t; }
+            let search = document.getElementById('sku-search').value.toLowerCase();
+            
+            let timeData = sku_raw.filter(r => r.wk>=f && r.wk<=t && (!search || r.sku.toLowerCase().includes(search)));
+            
+            let camps = [...new Set(timeData.map(r=>r.camp))].sort();
+            let adgBase = sku_selectedCamps.size>0 ? timeData.filter(r=>sku_selectedCamps.has(r.camp)) : timeData;
+            let adgs = [...new Set(adgBase.map(r=>r.adg))].sort();
+
+            if(!preserve) { sku_selectedCamps.clear(); sku_selectedAdgs.clear(); }
+
+            document.getElementById('sku-ms-camp-opts').innerHTML = camps.map(c => `<label><input type="checkbox" value="${utils.esc(c)}" onchange="window.sku_msChange('camp',this)" ${sku_selectedCamps.has(c)?'checked':''}> ${utils.esc(c)}</label>`).join('');
+            document.getElementById('sku-ms-camp-lbl').innerText = sku_selectedCamps.size===0 ? '全部' : `已选 ${sku_selectedCamps.size} 项`;
+            document.getElementById('sku-ms-adg-opts').innerHTML = adgs.map(a => `<label><input type="checkbox" value="${utils.esc(a)}" onchange="window.sku_msChange('adg',this)" ${sku_selectedAdgs.has(a)?'checked':''}> ${utils.esc(a)}</label>`).join('');
+            document.getElementById('sku-ms-adg-lbl').innerText = sku_selectedAdgs.size===0 ? '全部' : `已选 ${sku_selectedAdgs.size} 项`;
+
+            let curData = timeData.filter(r => {
+                if(sku_selectedCamps.size>0 && !sku_selectedCamps.has(r.camp)) return false;
+                if(sku_selectedAdgs.size>0 && !sku_selectedAdgs.has(r.adg)) return false;
+                return true;
+            });
+            
+            sku_renderTop10(curData);
+            sku_updatePivot(curData);
+            document.getElementById('sku-action-results').style.display = 'none';
+        };
+
+        window.sku_msChange = function(type, cb) {
+            let set = type==='camp' ? sku_selectedCamps : sku_selectedAdgs;
+            if(cb.checked) set.add(cb.value); else set.delete(cb.value);
+            sku_update(true);
+        };
+
+        function sku_renderTop10(data) {
+            let map = new Map();
+            data.forEach(r => {
+                if(!map.has(r.sku)) map.set(r.sku, {sku:r.sku, spend:0, sales:0});
+                let g = map.get(r.sku); g.spend+=r.spend; g.sales+=r.sales;
+            });
+            let list = Array.from(map.values()).map(s => { s.roas = s.spend>0?s.sales/s.spend:0; return s; });
+            
+            let tSp = [...list].sort((a,b)=>b.spend-a.spend).slice(0,10);
+            let tSa = [...list].sort((a,b)=>b.sales-a.sales).slice(0,10);
+            let tRo = [...list].filter(x=>x.spend>5).sort((a,b)=>b.roas-a.roas).slice(0,10);
+            
+            sku_topSpSet = new Set(tSp.map(x=>x.sku));
+            sku_topSaSet = new Set(tSa.map(x=>x.sku));
+
+            let draw = (arr, valKey, maxV, col, fmt) => {
+                if(!arr.length) return '<div style="color:var(--muted); padding:10px;">无数据</div>';
+                return arr.map(s => {
+                    let cls = 'skubar_'+s.sku.replace(/\W/g,'');
+                    return `<div class="top10-bar ${cls}" onmouseover="utils.highlight('${cls}')" onmouseout="utils.unhighlight()">
+                        <div class="label"><span title="${s.sku}" style="width:75%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${utils.esc(s.sku)}</span><span style="color:${col}">${fmt(s[valKey])}</span></div>
+                        <div class="track"><div class="fill" style="width:${(s[valKey]/maxV)*100}%;background:${col}"></div></div>
+                    </div>`;
+                }).join('');
+            };
+            
+            document.getElementById('sku-top-spend').innerHTML = draw(tSp, 'spend', Math.max(...tSp.map(x=>x.spend),1), 'var(--primary)', utils.fmtM);
+            document.getElementById('sku-top-sales').innerHTML = draw(tSa, 'sales', Math.max(...tSa.map(x=>x.sales),1), 'var(--success)', utils.fmtM);
+            document.getElementById('sku-top-roas').innerHTML = draw(tRo, 'roas', Math.max(...tRo.map(x=>x.roas),1), 'var(--purple)', utils.fmtR);
+
+            let bad = tSp.filter(x => !sku_topSaSet.has(x.sku));
+            let core = tSp.filter(x => sku_topSaSet.has(x.sku));
+            let pot = tRo.filter(x => !sku_topSpSet.has(x.sku));
+
+            let buildStr = (arr, valKey, isRoas=false) => {
+                if(arr.length === 0) return '<span style="color:var(--muted);">暂无</span>';
+                let str = arr.slice(0, 4).map(x => `<b>${utils.esc(x.sku)}</b> (${isRoas ? 'ROAS ' : '花费 '}${isRoas ? utils.fmtR(x[valKey]) : utils.fmtM(x[valKey])})`).join('、');
+                return arr.length > 4 ? str + ' 等' : str;
+            };
+
+            document.getElementById('sku-insight-bad-count').innerText = bad.length;
+            document.getElementById('sku-insight-bad-list').innerHTML = buildStr(bad, 'spend');
+            document.getElementById('sku-insight-core-count').innerText = core.length;
+            document.getElementById('sku-insight-core-list').innerHTML = buildStr(core, 'spend');
+            document.getElementById('sku-insight-pot-count').innerText = pot.length;
+            document.getElementById('sku-insight-pot-list').innerHTML = buildStr(pot, 'roas', true);
+        }
+
+        window.sku_dimChange = function(cb) {
+            if(cb.checked) { sku_activeDims.push(cb.value); } else { sku_activeDims = sku_activeDims.filter(v => v!==cb.value); }
+            sku_updatePivot();
+        };
+
+        window.sku_updatePivot = function(dataParam) {
+            let data = dataParam;
+            if(!data) {
+                let f = document.getElementById('sku-wk-from').value; let t = document.getElementById('sku-wk-to').value; let s = document.getElementById('sku-search').value.toLowerCase();
+                data = sku_raw.filter(r => r.wk>=f && r.wk<=t && (!s || r.sku.toLowerCase().includes(s)));
+                data = data.filter(r => { if(sku_selectedCamps.size>0 && !sku_selectedCamps.has(r.camp)) return false; if(sku_selectedAdgs.size>0 && !sku_selectedAdgs.has(r.adg)) return false; return true; });
+            }
+            
+            let orderMap = {camp:'Campaign', adg:'Ad Group', sku:'SKU', wk:'Week'};
+            document.getElementById('sku-dim-order').innerText = sku_activeDims.length ? `当前嵌套顺序：${sku_activeDims.map(x=>orderMap[x]).join(' ➡️ ')}` : '请至少勾选一个层级';
+            
+            let tb = document.getElementById('sku-tbody');
+            if(!sku_activeDims.length) { tb.innerHTML='<tr><td colspan="9" style="text-align:center;">无选中层级</td></tr>'; return; }
+            
+            sku_curTree = utils.buildTree(data, sku_activeDims, 0);
+            let html = '';
+            let drawNode = (n, pid, idx) => {
+                let id = pid ? `${pid}_${idx}` : `s_${idx}`;
+                let hasC = n.children && n.children.length>0;
+                let btn = hasC ? `<span class="tree-toggle" onclick="toggleTreeNode('${id}', this)">▶</span>` : `<span style="width:20px;display:inline-block"></span>`;
+                let icon = n.dim==='camp'?'🎯':n.dim==='adg'?'🗂️':n.dim==='wk'?'📅':'📦';
+                html += `<tr id="${id}" data-parent="${pid}" style="display:${n.lvl===0?'table-row':'none'};" class="row-level-${n.lvl}">
+                    <td style="padding-left:${n.lvl*20+10}px;">${btn} ${icon} ${utils.esc(n.name)}</td>
+                    <td style="font-weight:600;">${utils.fmtM(n.spend)}</td><td>${utils.fmtM(n.sales)}</td><td>${utils.fmtI(n.orders)}</td><td>${utils.fmtI(n.clicks)}</td>
+                    <td style="color:${n.roas>=3?'var(--success)':'var(--text)'};font-weight:600;">${utils.fmtR(n.roas)}</td>
+                    <td>${n.acos===Infinity?'>100%':utils.fmtP(n.acos)}</td><td>${utils.fmtP(n.ctr)}</td><td>${utils.fmtP(n.cvr)}</td>
+                </tr>`;
+                if(hasC) n.children.forEach((c,i)=>drawNode(c,id,i));
+            };
+            sku_curTree.forEach((c,i)=>drawNode(c,'',i));
+            tb.innerHTML = html || '<tr><td colspan="9" style="text-align:center;">无数据</td></tr>';
+        };
+
+        window.sku_fillConfig = function() {
+            let f = document.getElementById('sku-wk-from').value; let t = document.getElementById('sku-wk-to').value;
+            let curData = sku_raw.filter(r => r.wk>=f && r.wk<=t);
+            let tsp=0, tsa=0; curData.forEach(r => { tsp+=r.spend; tsa+=r.sales; });
+            document.getElementById('sku-clk').value = 30; // 调整为30
+            if(tsp>0 && tsa>0) {
+                let avgRoas = tsa/tsp; 
+                let targetRoas = avgRoas * 0.7; // 均值的 70% 
+                let targetAcos = (1 / targetRoas) * 100;
+                document.getElementById('sku-roa').value = targetRoas.toFixed(2);
+                document.getElementById('sku-aco').value = Math.min(targetAcos, 999).toFixed(1); 
+            } else { document.getElementById('sku-roa').value=0; document.getElementById('sku-aco').value=0; }
+        };
+
+        window.sku_runActionEngine = function() {
+            let f = document.getElementById('sku-wk-from').value; let t = document.getElementById('sku-wk-to').value;
+            let curData = sku_raw.filter(r => r.wk>=f && r.wk<=t);
+            let wks = new Set(curData.map(r=>r.wk)).size;
+            if(wks < 2) { alert('⚠️ 诊断要求时段必须包含 $\\ge 2$ 周的历史数据，防止偶然性误杀。'); return; }
+
+            // 1. 一品多投预警 (仅检测最新完整周)
+            let sortedWks = [...new Set(curData.map(r=>r.wk))].sort();
+            let latestWk = sortedWks[sortedWks.length-1];
+            let lMap = new Map();
+            curData.filter(r=>r.wk===latestWk && r.spend>0).forEach(r=>{
+                if(!lMap.has(r.sku)) lMap.set(r.sku, {c:new Set(), a:new Set()});
+                lMap.get(r.sku).c.add(r.camp); lMap.get(r.sku).a.add(r.adg);
+            });
+            let canHtml = '';
+            lMap.forEach((v,k)=>{
+                if(v.c.size>1 || v.a.size>1) {
+                    canHtml += `<div style="margin-top:6px;"><b style="color:var(--danger)">📦 ${utils.esc(k)}</b> 被投放在 ${v.c.size} 个Campaign / ${v.a.size} 个Ad Group。</div>`;
+                }
+            });
+            if(canHtml) {
+                document.getElementById('sku-cannibal-alert').innerHTML = `<div style="background:#FEF2F2; border-left:4px solid var(--danger); padding:16px; border-radius:8px;">
+                    <div style="font-weight:700; color:var(--danger); margin-bottom:8px; font-size:15px;">🚨 内部流量互搏预警 (仅检测最新周: ${latestWk})</div>
+                    <div style="font-size:12px; color:var(--danger);">以下 SKU 在多处同时烧花费，极易自我竞价抬高 CPC，建议立即排查并择优保留一处：</div>
+                    <div style="font-size:12px; color:var(--text); line-height:1.6;">${canHtml}</div>
+                </div>`;
+            } else { document.getElementById('sku-cannibal-alert').innerHTML=''; }
+
+            // 2. 宏观大盘操盘逻辑
+            let minC = parseFloat(document.getElementById('sku-clk').value)||0;
+            let minA = (parseFloat(document.getElementById('sku-aco').value)||0)/100;
+            let maxR = parseFloat(document.getElementById('sku-roa').value)||Infinity;
+
+            let dMap = new Map(); let tSp=0, tSa=0;
+            curData.forEach(r => {
+                let key = `${r.camp}|${r.adg}|${r.sku}`;
+                if(!dMap.has(key)) dMap.set(key, {camp:r.camp, adg:r.adg, sku:r.sku, spend:0, sales:0, orders:0, clicks:0, impr:0, conv:0});
+                let g = dMap.get(key);
+                g.spend+=r.spend; g.sales+=r.sales; g.orders+=r.orders; g.clicks+=r.clicks; g.impr+=r.impr; g.conv+=r.conv;
+                tSp+=r.spend; tSa+=r.sales;
+            });
+            let avgR = tSp>0?tSa/tSp:0;
+
+            let campHealth = {};
+            dMap.forEach(g => {
+                g.roas = g.spend>0 ? g.sales/g.spend : 0; g.acos = g.sales>0 ? g.spend/g.sales : (g.spend>0?Infinity:0);
+                g.ctr = g.impr>0 ? g.clicks/g.impr : 0; g.cvr = g.clicks>0 ? g.conv/g.clicks : 0;
+                
+                if (!campHealth[g.camp]) campHealth[g.camp] = { good: [], bad: [], observe: [] };
+
+                let isBad = false;
+                if(g.clicks >= minC) {
+                    if (g.orders === 0 || g.acos >= minA || g.roas <= maxR) isBad = true;
+                }
+                
+                // 刺客判定：在全盘高花费榜，但不在高产出榜
+                if (!isBad && sku_topSpSet.has(g.sku) && !sku_topSaSet.has(g.sku)) isBad = true;
+
+                if(isBad) {
+                    if(g.orders === 0 && g.clicks >= minC) { g.err = `0 订单`; campHealth[g.camp].bad.push(g); }
+                    else if(g.acos >= minA || g.roas <= maxR) { g.err = `亏损超标`; campHealth[g.camp].bad.push(g); }
+                    else if(g.ctr < 0.01) { g.err = `点击意愿低`; campHealth[g.camp].bad.push(g); }
+                    else if(g.cvr <= 0.04) { g.err = `转化流失`; campHealth[g.camp].bad.push(g); }
+                    else { g.err = `综合表现差`; campHealth[g.camp].bad.push(g); }
+                } else if (g.sales > 0 && g.roas >= avgR * 1.5) { // 必须大于均值 1.5 倍才算优秀
+                    g.err = `优秀`; campHealth[g.camp].good.push(g);
+                } else {
+                    g.err = `观察`; campHealth[g.camp].observe.push(g);
+                }
+            });
+
+            let buckets = { excellent: [], mixedGood: [], mixedBad: [], severe: [] };
+
+            Object.keys(campHealth).forEach(camp => {
+                let h = campHealth[camp];
+                let gc = h.good.length; let bc = h.bad.length;
+                if (gc === 0 && bc === 0) return;
+                let campData = { camp: camp, items: [...h.good, ...h.bad] };
+                if (gc > 0 && bc === 0) buckets.excellent.push(campData);
+                else if (gc === 0 && bc > 0) buckets.severe.push(campData);
+                else if (gc > bc) buckets.mixedGood.push(campData);
+                else buckets.mixedBad.push(campData);
+            });
+
+            renderActionBuckets(buckets, 'sku-action-buckets', false);
+            document.getElementById('sku-action-results').style.display = 'block';
+        };
+
+        window.sku_exportData = function() {
+            if (!sku_curTree || sku_curTree.length === 0) { alert('🚨 暂无数据！'); return; }
+            let aoa = [['层级名称', '层级类型', 'Spend', 'Sales', 'Orders', 'Clicks', 'ROAS', 'ACOS', 'CTR', 'CVR']];
+            let pushRow = (node, pre) => {
+                aoa.push([ pre + node.name, (node.dim||'').toUpperCase(), node.spend, node.sales, node.orders, node.clicks, node.roas, node.acos, node.ctr, node.cvr ]);
+                if(node.children) node.children.forEach(c => pushRow(c, pre + '  ↳ '));
+            };
+            sku_curTree.forEach(c => pushRow(c, ''));
+            let csv = '\ufeff' + aoa.map(r => r.map(i=>`"${(i===null?'':String(i)).replace(/"/g,'""')}"`).join(",")).join("\r\n");
+            let blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            let a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `SKU_Pivot_Export.csv`;
+            a.style.display='none'; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        };
+
+        // ==========================================
+        // 模块 2：🔑 Keyword Optimizer 全局函数
+        // ==========================================
+        let kw_raw=[], kw_activeDims=[];
+        let kw_selectedCamps = new Set(), kw_selectedAdgs = new Set();
+        let kw_topSpSet = new Set(), kw_topConvSet = new Set();
+        let kw_curTree = [];
+
+        document.getElementById('kw-file').addEventListener('change', e => {
+            if(!e.target.files[0]) return;
+            app_parseFile(e.target.files[0], 'kw-upload', kw_processData);
+            e.target.value = '';
+        });
+
+        document.getElementById('kw-roa').addEventListener('input', function(e) {
+            let roa = parseFloat(e.target.value);
+            if(roa > 0) document.getElementById('kw-aco').value = ((1/roa)*100).toFixed(1);
+            else document.getElementById('kw-aco').value = '';
+        });
+        document.getElementById('kw-aco').addEventListener('input', function(e) {
+            let aco = parseFloat(e.target.value);
+            if(aco > 0) document.getElementById('kw-roa').value = (1/(aco/100)).toFixed(2);
+            else document.getElementById('kw-roa').value = '';
+        });
+
+        function kw_processData(data) {
+            let map = new Map();
+            data.forEach(r => {
+                let dStr = r['Day']||r['Date']; if(!dStr) return;
+                let wk = utils.getWk(dStr); let camp = (r['Campaign']||'(空白)').trim(); let adg = (r['Ad group']||'(空白)').trim(); let kw = (r['Keyword']||r['Target']||'').trim();
+                if(!kw || kw.toLowerCase()==='total') return;
+                let key = `${wk}|${camp}|${adg}|${kw}`;
+                if(!map.has(key)) map.set(key, {wk, camp, adg, kw, impr:0, clicks:0, spend:0, sales:0, orders:0, conv:0});
+                let g = map.get(key);
+                g.impr += parseFloat(r['Impresisons']||r['Impressions']||0)||0; g.clicks += parseFloat(r['Clicks']||0)||0;
+                g.spend += parseFloat(r['Spend']||0)||0; g.sales += parseFloat(r['Sales']||0)||0;
+                g.orders += parseFloat(r['Orders']||r['Direct Orders']||0)||0; g.conv += parseFloat(r['Conversions']||r['Direct Conversions']||0)||0;
+            });
+            kw_raw = Array.from(map.values());
+            if(kw_raw.length===0) { alert('数据为空，请检查列名'); location.reload(); return; }
+            
+            document.getElementById('kw-upload').style.display='none'; document.getElementById('kw-workspace').style.display='block';
+            document.getElementById('global-export-btn').style.display='inline-flex';
+            
+            let wks = [...new Set(kw_raw.map(r=>r.wk))].sort();
+            let opts = wks.map(w => `<option value="${w}">${w}</option>`).join('');
+            document.getElementById('kw-wk-from').innerHTML=opts; document.getElementById('kw-wk-to').innerHTML=opts;
+            document.getElementById('kw-wk-from').value=wks[0]; document.getElementById('kw-wk-to').value=wks[wks.length-1];
+            
+            kw_activeDims = [];
+            document.querySelectorAll('.kw-dim-cb').forEach(cb => { if(cb.value!=='wk') { cb.checked=true; kw_activeDims.push(cb.value); }});
+            
+            kw_update();
+        }
+
+        window.kw_update = function(preserve=false) {
+            let f = document.getElementById('kw-wk-from').value; let t = document.getElementById('kw-wk-to').value;
+            if(f>t) { let tmp=f; f=t; t=tmp; document.getElementById('kw-wk-from').value=f; document.getElementById('kw-wk-to').value=t; }
+            let search = document.getElementById('kw-search').value.toLowerCase();
+            
+            let timeData = kw_raw.filter(r => r.wk>=f && r.wk<=t && (!search || r.kw.toLowerCase().includes(search)));
+            
+            let camps = [...new Set(timeData.map(r=>r.camp))].sort();
+            let adgBase = kw_selectedCamps.size>0 ? timeData.filter(r=>kw_selectedCamps.has(r.camp)) : timeData;
+            let adgs = [...new Set(adgBase.map(r=>r.adg))].sort();
+
+            if(!preserve) { kw_selectedCamps.clear(); kw_selectedAdgs.clear(); }
+
+            document.getElementById('kw-ms-camp-opts').innerHTML = camps.map(c => `<label><input type="checkbox" value="${utils.esc(c)}" onchange="window.kw_msChange('camp',this)" ${kw_selectedCamps.has(c)?'checked':''}> ${utils.esc(c)}</label>`).join('');
+            document.getElementById('kw-ms-camp-lbl').innerText = kw_selectedCamps.size===0 ? '全部' : `已选 ${kw_selectedCamps.size} 项`;
+            document.getElementById('kw-ms-adg-opts').innerHTML = adgs.map(a => `<label><input type="checkbox" value="${utils.esc(a)}" onchange="window.kw_msChange('adg',this)" ${kw_selectedAdgs.has(a)?'checked':''}> ${utils.esc(a)}</label>`).join('');
+            document.getElementById('kw-ms-adg-lbl').innerText = kw_selectedAdgs.size===0 ? '全部' : `已选 ${kw_selectedAdgs.size} 项`;
+
+            let curData = timeData.filter(r => {
+                if(kw_selectedCamps.size>0 && !kw_selectedCamps.has(r.camp)) return false;
+                if(kw_selectedAdgs.size>0 && !kw_selectedAdgs.has(r.adg)) return false;
+                return true;
+            });
+            
+            kw_renderTop10(curData);
+            kw_updatePivot(curData);
+            document.getElementById('kw-action-results').style.display = 'none';
+        };
+
+        window.kw_msChange = function(type, cb) {
+            let set = type==='camp' ? kw_selectedCamps : kw_selectedAdgs;
+            if(cb.checked) set.add(cb.value); else set.delete(cb.value);
+            kw_update(true);
+        };
+
+        function kw_renderTop10(data) {
+            let map = new Map();
+            data.forEach(r => {
+                if(!map.has(r.kw)) map.set(r.kw, {kw:r.kw, spend:0, sales:0, conv:0});
+                let g = map.get(r.kw); g.spend+=r.spend; g.sales+=r.sales; g.conv+=r.conv;
+            });
+            let list = Array.from(map.values()).map(s => { s.roas = s.spend>0?s.sales/s.spend:0; return s; });
+
+            let tSp = [...list].sort((a,b)=>b.spend-a.spend).slice(0,10);
+            let tCo = [...list].sort((a,b)=>b.conv-a.conv).slice(0,10);
+            let tRo = [...list].filter(x=>x.spend>2).sort((a,b)=>b.roas-a.roas).slice(0,10);
+            
+            kw_topSpSet = new Set(tSp.map(x=>x.kw));
+            kw_topConvSet = new Set(tCo.map(x=>x.kw));
+
+            let draw = (arr, valKey, maxV, col, fmt) => {
+                if(!arr.length) return '<div style="color:var(--muted); padding:10px;">无数据</div>';
+                return arr.map(s => {
+                    let cls = 'kwbar_'+s.kw.replace(/\W/g,'');
+                    return `<div class="top10-bar ${cls}" onmouseover="utils.highlight('${cls}')" onmouseout="utils.unhighlight()">
+                        <div class="label"><span title="${s.kw}" style="width:75%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${utils.esc(s.kw)}</span><span style="color:${col}">${fmt(s[valKey])}</span></div>
+                        <div class="track"><div class="fill" style="width:${(s[valKey]/maxV)*100}%;background:${col}"></div></div>
+                    </div>`;
+                }).join('');
+            };
+            
+            document.getElementById('kw-top-spend').innerHTML = draw(tSp, 'spend', Math.max(...tSp.map(x=>x.spend),1), 'var(--primary)', utils.fmtM);
+            document.getElementById('kw-top-conv').innerHTML = draw(tCo, 'conv', Math.max(...tCo.map(x=>x.conv),1), 'var(--warning)', utils.fmtI);
+            document.getElementById('kw-top-roas').innerHTML = draw(tRo, 'roas', Math.max(...tRo.map(x=>x.roas),1), 'var(--purple)', utils.fmtR);
+        }
+
+        window.kw_dimChange = function(cb) {
+            if(cb.checked) { if(!kw_activeDims.includes(cb.value)) kw_activeDims.push(cb.value); } 
+            else { kw_activeDims = kw_activeDims.filter(v => v!==cb.value); }
+            kw_updatePivot();
+        };
+
+        window.kw_updatePivot = function(dataParam) {
+            let data = dataParam;
+            if(!data) {
+                let f = document.getElementById('kw-wk-from').value; let t = document.getElementById('kw-wk-to').value; let s = document.getElementById('kw-search').value.toLowerCase();
+                data = kw_raw.filter(r => r.wk>=f && r.wk<=t && (!s || r.kw.toLowerCase().includes(s)));
+                data = data.filter(r => { if(kw_selectedCamps.size>0 && !kw_selectedCamps.has(r.camp)) return false; if(kw_selectedAdgs.size>0 && !kw_selectedAdgs.has(r.adg)) return false; return true; });
+            }
+            
+            let orderMap = {camp:'Campaign', adg:'Ad Group', kw:'Keyword', wk:'Week'};
+            document.getElementById('kw-dim-order').innerText = kw_activeDims.length ? `当前嵌套顺序：${kw_activeDims.map(x=>orderMap[x]).join(' ➡️ ')}` : '请至少勾选一个层级';
+            
+            let tb = document.getElementById('kw-tbody');
+            if(!kw_activeDims.length) { tb.innerHTML='<tr><td colspan="9" style="text-align:center;">请勾选表格透视维度</td></tr>'; return; }
+            
+            kw_curTree = utils.buildTree(data, kw_activeDims.map(x=>x==='keyword'?'kw':x), 0);
+            let html = '';
+            let drawNode = (n, pid, idx) => {
+                let id = pid ? `${pid}_${idx}` : `k_${idx}`;
+                let hasC = n.children && n.children.length>0;
+                let btn = hasC ? `<span class="tree-toggle" onclick="toggleTreeNode('${id}', this)">▶</span>` : `<span style="width:20px;display:inline-block"></span>`;
+                let icon = n.dim==='camp'?'🎯':n.dim==='adg'?'🗂️':n.dim==='wk'?'📅':'🔑';
+                html += `<tr id="${id}" data-parent="${pid}" style="display:${n.lvl===0?'table-row':'none'};" class="row-level-${n.lvl}">
+                    <td style="padding-left:${n.lvl*20+10}px;">${btn} ${icon} ${utils.esc(n.name)}</td>
+                    <td style="font-weight:600;">${utils.fmtM(n.spend)}</td><td>${utils.fmtM(n.sales)}</td><td>${utils.fmtI(n.orders)}</td><td>${utils.fmtI(n.clicks)}</td>
+                    <td style="color:${n.roas>=3?'var(--success)':'var(--text)'};font-weight:600;">${utils.fmtR(n.roas)}</td>
+                    <td>${n.acos===Infinity?'>100%':utils.fmtP(n.acos)}</td><td>${utils.fmtP(n.ctr)}</td><td>${utils.fmtP(n.cvr)}</td>
+                </tr>`;
+                if(hasC) n.children.forEach((c,i)=>drawNode(c,id,i));
+            };
+            kw_curTree.forEach((c,i)=>drawNode(c,'',i));
+            tb.innerHTML = html || '<tr><td colspan="9" style="text-align:center;">无数据</td></tr>';
+        };
+
+        window.kw_fillConfig = function() {
+            let f = document.getElementById('kw-wk-from').value; let t = document.getElementById('kw-wk-to').value;
+            let curData = kw_raw.filter(r => r.wk>=f && r.wk<=t);
+            let tsp=0, tsa=0; curData.forEach(r => { tsp+=r.spend; tsa+=r.sales; });
+            document.getElementById('kw-clk').value = 30; // 调整为30
+            if(tsp>0 && tsa>0) {
+                let avgRoas = tsa/tsp; 
+                let targetRoas = avgRoas * 0.7; // 建议均值的 70% 作为底线
+                let targetAcos = (1 / targetRoas) * 100;
+                document.getElementById('kw-roa').value = targetRoas.toFixed(2);
+                document.getElementById('kw-aco').value = Math.min(targetAcos, 999).toFixed(1); 
+            } else { document.getElementById('kw-roa').value=0; document.getElementById('kw-aco').value=0; }
+        };
+
+        window.kw_runActionEngine = function() {
+            let f = document.getElementById('kw-wk-from').value; let t = document.getElementById('kw-wk-to').value;
+            let curData = kw_raw.filter(r => r.wk>=f && r.wk<=t);
+            if(new Set(curData.map(r=>r.wk)).size < 2) { alert('⚠️ 诊断要求时段必须包含 $\\ge 2$ 周的数据，防止偶然性误杀。'); return; }
+
+            let minC = parseFloat(document.getElementById('kw-clk').value)||0;
+            let minA = (parseFloat(document.getElementById('kw-aco').value)||0)/100;
+            let maxR = parseFloat(document.getElementById('kw-roa').value)||Infinity;
+
+            let dMap = new Map(); let kwAgg = new Map(); let tSp=0, tSa=0;
+            curData.forEach(r => {
+                let key = `${r.camp}|${r.adg}|${r.kw}`;
+                if(!dMap.has(key)) dMap.set(key, {camp:r.camp, adg:r.adg, kw:r.kw, spend:0, sales:0, orders:0, clicks:0, impr:0, conv:0});
+                let g = dMap.get(key);
+                g.spend+=r.spend; g.sales+=r.sales; g.orders+=r.orders; g.clicks+=r.clicks; g.impr+=r.impr; g.conv+=r.conv;
+                
+                if(!kwAgg.has(r.camp)) kwAgg.set(r.camp, new Map());
+                let campKw = kwAgg.get(r.camp); campKw.set(r.kw, (campKw.get(r.kw)||0)+r.clicks);
+                tSp+=r.spend; tSa+=r.sales;
+            });
+            let avgR = tSp>0?tSa/tSp:0;
+
+            let campCoreKw = {};
+            kwAgg.forEach((kwMap, cName) => {
+                let sorted = [...kwMap.entries()].sort((a,b)=>b[1]-a[1]);
+                campCoreKw[cName] = sorted.length ? sorted[0][0] : '';
+            });
+
+            let buckets = { promoteCamp: [], focusKw: [], negKw: [], optKw: [] };
+            
+            // 1. 活动级别的加投判定 (ROAS >= 均值的 1.2 倍)
+            let campAgg = new Map();
+            curData.forEach(r => {
+                if(!campAgg.has(r.camp)) campAgg.set(r.camp, {spend:0, sales:0});
+                campAgg.get(r.camp).spend += r.spend; campAgg.get(r.camp).sales += r.sales;
+            });
+            campAgg.forEach((v, k) => {
+                let r = v.spend>0 ? v.sales/v.spend : 0;
+                if (r >= avgR * 1.2 && v.sales > 0) buckets.promoteCamp.push({camp: k, spend: v.spend, sales: v.sales, roas: r});
+            });
+
+            // 2. 词汇级别精细化排查
+            dMap.forEach(g => {
+                g.roas = g.spend>0 ? g.sales/g.spend : 0; g.acos = g.sales>0 ? g.spend/g.sales : (g.spend>0?Infinity:0);
+                g.ctr = g.impr>0 ? g.clicks/g.impr : 0; g.cvr = g.clicks>0 ? g.conv/g.clicks : 0; g.cpc = g.clicks>0 ? g.spend/g.clicks : 0;
+
+                if (g.sales > 0 && g.roas >= avgR * 1.5) {
+                    buckets.focusKw.push(g); // 优秀词
+                }
+
+                let isBad = false;
+                if(g.clicks >= minC) {
+                    if (g.orders === 0 || g.acos >= minA || g.roas <= maxR) isBad = true;
+                }
+
+                // 刺客判定
+                if (!isBad && kw_topSpSet.has(g.kw) && !kw_topConvSet.has(g.kw)) isBad = true;
+
+                let coreKw = campCoreKw[g.camp] || '';
+                let isSim = utils.isSim(g.kw, coreKw);
+
+                if(isBad) {
+                    g.coreKw = coreKw; // 将核心词带入展示数据
+                    // 毫无相关 + 0单 ➡️ 精准否定 (并且满足设定的 clicks)
+                    if(!isSim && g.orders === 0 && g.clicks >= minC) { 
+                        g.err = `跑偏 0 单`; g.act = '直接精否'; 
+                        buckets.negKw.push(g); 
+                    } 
+                    // 其余情况（有转化，或跟核心词匹配的亏损词） ➡️ 优化漏斗
+                    else {
+                        if(g.ctr < 0.01) { g.err = `点击意愿低`; g.act = '优化主图/售价'; }
+                        else if(g.cvr <= 0.04) { g.err = `转化流失`; g.act = '优化详情页/A+'; }
+                        else { g.err = `点击过贵`; g.act = '降价/建新组'; }
+                        buckets.optKw.push(g);
+                    }
+                }
+            });
+
+            // 渲染 UI
+            let html = '';
+            
+            let buildKwBucket = (title, items, col, desc, isCamp = false, isNeg = false) => {
+                if(!items.length) return '';
+                let trs = '';
+                if(isCamp) {
+                    items.sort((a,b) => b.roas - a.roas);
+                    trs = items.map(x => `<tr><td><b>${utils.esc(x.camp)}</b></td><td>-</td><td>-</td><td>${utils.fmtM(x.spend)}</td><td>${utils.fmtM(x.sales)}</td><td style="color:${col};font-weight:600;">${utils.fmtR(x.roas)}</td><td>-</td></tr>`).join('');
+                    return `
+                    <div class="action-bucket" style="border-color:${col};">
+                        <div class="action-header" style="background:${col};">
+                            <span>${title} (${items.length} 个)</span>
+                            <span class="action-desc">${desc}</span>
+                        </div>
+                        <div class="action-body" style="padding:0;">
+                            <div class="table-wrap" style="max-height:250px;">
+                                <table class="mini-table">
+                                    <thead><tr><th>Campaign</th><th>Ad Group</th><th>Keyword</th><th>Spend</th><th>Sales</th><th>ROAS</th><th>诊断说明</th></tr></thead>
+                                    <tbody>${trs}</tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>`;
+                } else if (isNeg) {
+                    items.sort((a,b) => b.spend - a.spend);
+                    trs = items.map(x => `<tr><td>${utils.esc(x.camp)}</td><td>${utils.esc(x.adg)}</td><td><b>${utils.esc(x.kw)}</b></td><td><span style="color:#B45309;">${utils.esc(x.coreKw)}</span></td><td>${utils.fmtM(x.spend)}</td><td>${utils.fmtI(x.clicks)}</td><td><span class="err-tag" style="background:#fff;border-color:${col};color:${col}">${x.err}</span></td></tr>`).join('');
+                    return `
+                    <div class="action-bucket" style="border-color:${col};">
+                        <div class="action-header" style="background:${col};">
+                            <span>${title} (${items.length} 个)</span>
+                            <span class="action-desc">${desc}</span>
+                        </div>
+                        <div class="action-body" style="padding:0;">
+                            <div class="table-wrap" style="max-height:250px;">
+                                <table class="mini-table">
+                                    <thead><tr><th>Campaign</th><th>Ad Group</th><th>跑偏词 (Keyword)</th><th>活动基准核心词</th><th>Spend</th><th>Clicks</th><th>诊断标签</th></tr></thead>
+                                    <tbody>${trs}</tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>`;
+                } else {
+                    items.sort((a,b) => b.spend - a.spend);
+                    trs = items.map(x => `<tr><td>${utils.esc(x.camp)}</td><td>${utils.esc(x.adg)}</td><td><b>${utils.esc(x.kw)}</b></td><td>${utils.fmtM(x.spend)}</td><td>${utils.fmtM(x.sales)}</td><td style="color:${col};font-weight:600;">${utils.fmtR(x.roas)}</td><td><span class="err-tag" style="background:#fff;border-color:${col};color:${col}">${x.err||'优秀'}</span></td></tr>`).join('');
+                    return `
+                    <div class="action-bucket" style="border-color:${col};">
+                        <div class="action-header" style="background:${col};">
+                            <span>${title} (${items.length} 个)</span>
+                            <span class="action-desc">${desc}</span>
+                        </div>
+                        <div class="action-body" style="padding:0;">
+                            <div class="table-wrap" style="max-height:250px;">
+                                <table class="mini-table">
+                                    <thead><tr><th>Campaign</th><th>Ad Group</th><th>Keyword</th><th>Spend</th><th>Sales</th><th>ROAS</th><th>诊断标签</th></tr></thead>
+                                    <tbody>${trs}</tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>`;
+                }
+            };
+
+            html += buildKwBucket('🌟 建议加投的广告活动', buckets.promoteCamp, 'var(--success)', '大盘表现优异。确认对应产品库存充足后，增加该活动的整体预算。', true, false);
+            html += buildKwBucket('💡 核心优异高潜词库', buckets.focusKw, 'var(--primary)', '投入产出极佳。建议将其补充至对应产品标题或详情页中强化自然搜索权重。', false, false);
+            html += buildKwBucket('🛑 严重跑偏且无转化词', buckets.negKw, 'var(--danger)', '与活动核心词完全不相关，且点击极多却 0 转化。建议：先确认是否是无效词，再考虑精否。', false, true);
+            html += buildKwBucket('🛠️ 意图相关但亏损的词', buckets.optKw, 'var(--warning)', '意图相关（或有出单）但利润已被击穿。请先参考诊断标签去优化漏斗表现，无法优化再考虑否词。', false, false);
+
+            document.getElementById('kw-action-buckets').innerHTML = html || '<div style="padding:20px; text-align:center; color:var(--success); font-weight:700; background:#F0FDF4; border:1px solid #BBF7D0; border-radius:8px;">✅ 当前大盘指标健康，未发现需要干预的异常 Keyword。</div>';
+            document.getElementById('kw-action-results').style.display = 'block';
+        }
+
+        window.kw_exportData = function() {
+            if (!kw_curTree || kw_curTree.length === 0) { alert('🚨 暂无数据！'); return; }
+            let aoa = [['层级名称', '层级类型', 'Spend', 'Sales', 'Orders', 'Clicks', 'ROAS', 'ACOS', 'CTR', 'CVR']];
+            let pushRow = (node, pre) => {
+                aoa.push([ pre + node.name, (node.dim||'').toUpperCase(), node.spend, node.sales, node.orders, node.clicks, node.roas, node.acos, node.ctr, node.cvr ]);
+                if(node.children) node.children.forEach(c => pushRow(c, pre + '  ↳ '));
+            };
+            kw_curTree.forEach(c => pushRow(c, ''));
+            let csv = '\ufeff' + aoa.map(r => r.map(i=>`"${(i===null?'':String(i)).replace(/"/g,'""')}"`).join(",")).join("\r\n");
+            let blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            let a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `Keyword_Pivot_Export.csv`;
+            a.style.display='none'; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        }
+
+    </script>
+</body>
+</html>
